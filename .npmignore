@@ -1,0 +1,33 @@
+# Source files (dist is included)
+*.ts
+!*.d.ts
+tsconfig.json
+
+# Development files
+.eslintrc.js
+.prettierrc
+.gitignore
+.git/
+
+# Test files
+test/
+coverage/
+*.test.ts
+*.spec.ts
+
+# Scripts
+scripts/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Development documentation
+CONTRIBUTING.md
