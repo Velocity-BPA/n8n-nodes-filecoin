@@ -8,309 +8,200 @@
 >
 > For licensing information, visit https://velobpa.com/licensing or contact licensing@velobpa.com.
 
-A comprehensive n8n community node package for the **Filecoin blockchain**, enabling seamless integration of decentralized storage operations into your n8n workflows. Features 19 resource categories with 80+ operations covering wallet management, storage deals, FEVM smart contracts, IPFS integration, and real-time blockchain monitoring.
+This n8n community node provides comprehensive integration with the Filecoin network, featuring 6 core resources for blockchain operations, decentralized storage, and smart contract interactions. Seamlessly interact with Filecoin's distributed storage network, manage wallets, execute transactions, and leverage IPFS capabilities directly within your n8n workflows.
 
-![Filecoin](https://img.shields.io/badge/Filecoin-0090FF?style=for-the-badge&logo=filecoin&logoColor=white)
-![n8n](https://img.shields.io/badge/n8n-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![License](https://img.shields.io/badge/license-BSL--1.1-blue?style=for-the-badge)
+![n8n Community Node](https://img.shields.io/badge/n8n-Community%20Node-blue)
+![License](https://img.shields.io/badge/license-BSL--1.1-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
+![Filecoin](https://img.shields.io/badge/Filecoin-Network-orange)
+![IPFS](https://img.shields.io/badge/IPFS-Enabled-green)
+![Blockchain](https://img.shields.io/badge/Blockchain-Storage-purple)
 
 ## Features
 
-- **19 Resource Types** - Complete coverage of Filecoin functionality
-- **80+ Operations** - From wallet management to storage deals
-- **Multi-Network Support** - Mainnet, Calibration, Hyperspace, and custom endpoints
-- **FEVM Integration** - Full Ethereum-compatible smart contract support
-- **IPFS Operations** - Seamless file storage and retrieval
-- **Real-Time Triggers** - Monitor blockchain events and transactions
-- **Type-Safe** - Full TypeScript implementation with comprehensive types
+- **Chain Operations** - Query blockchain state, retrieve blocks, and monitor network statistics
+- **Wallet Management** - Create wallets, check balances, and manage FIL transactions
+- **Message Handling** - Send messages, track confirmations, and retrieve transaction history
+- **Decentralized Storage** - Store and retrieve files using Filecoin's storage network
+- **Smart Contract Integration** - Deploy, interact with, and monitor smart contracts on Filecoin
+- **IPFS Support** - Pin content, retrieve files, and manage distributed content addressing
+- **Real-time Monitoring** - Track storage deals, miner status, and network health
+- **Comprehensive Error Handling** - Robust error management with detailed logging
 
 ## Installation
 
 ### Community Nodes (Recommended)
 
-1. Open your n8n instance
+1. Open n8n
 2. Go to **Settings** → **Community Nodes**
 3. Click **Install a community node**
 4. Enter `n8n-nodes-filecoin`
-5. Accept the risks and install
+5. Click **Install**
 
 ### Manual Installation
 
 ```bash
-# Navigate to your n8n nodes directory
-cd ~/.n8n/nodes
-
-# Install the package
+cd ~/.n8n
 npm install n8n-nodes-filecoin
-
-# Restart n8n
-n8n start
 ```
 
 ### Development Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/Velocity-BPA/n8n-nodes-filecoin.git
 cd n8n-nodes-filecoin
-
-# Install dependencies
 npm install
-
-# Build the project
 npm run build
-
-# Create symlink to n8n nodes directory
-mkdir -p ~/.n8n/nodes
-ln -s $(pwd) ~/.n8n/nodes/n8n-nodes-filecoin
-
-# Restart n8n
+mkdir -p ~/.n8n/custom
+ln -s $(pwd) ~/.n8n/custom/n8n-nodes-filecoin
 n8n start
 ```
 
 ## Credentials Setup
 
-### Filecoin Network
-
 | Field | Description | Required |
 |-------|-------------|----------|
-| Network | Mainnet, Calibration, Hyperspace, or Custom | Yes |
-| Lotus RPC URL | RPC endpoint URL | Yes |
-| Lotus API Token | API authentication token | No |
-| Private Key | Wallet private key (hex) | No |
-| Address Type | f1 (secp256k1) or f3 (BLS) | No |
-| Glif API URL | Glif explorer API endpoint | No |
-| FEVM RPC URL | Ethereum-compatible RPC URL | No |
-
-### Storage Provider
-
-| Field | Description | Required |
-|-------|-------------|----------|
-| Provider Endpoint | Storage provider API URL | Yes |
-| Auth Token | Authentication token | No |
-| Provider ID | Storage provider ID (f0xxxx) | No |
-
-### FEVM (Filecoin EVM)
-
-| Field | Description | Required |
-|-------|-------------|----------|
-| FEVM RPC URL | EVM-compatible RPC endpoint | Yes |
-| Private Key | Ethereum format private key | No |
-| Chain ID | 314 (mainnet) or 314159 (calibration) | Yes |
+| API Key | Your Filecoin API key for authentication | Yes |
+| Network | Target network (mainnet, testnet, devnet) | Yes |
+| RPC Endpoint | Custom RPC endpoint URL (optional) | No |
+| Timeout | Request timeout in milliseconds (default: 30000) | No |
 
 ## Resources & Operations
 
-### Wallet
-- Get Balance, Get Address Info, Create Wallet
-- Export/Import Private Key, List Wallets
-- Sign Message, Validate/Convert Address
+### 1. Chain
 
-### Transaction
-- Send FIL, Get Message, Wait for Confirmation
-- Estimate Gas, Build/Sign/Push Message
-- Get Chain Head, Get Base Fee
+| Operation | Description |
+|-----------|-------------|
+| Get Block | Retrieve block information by CID or height |
+| Get Chain Head | Get the current chain head |
+| Get Actor | Retrieve actor information by address |
+| Get Receipt | Get message receipt by CID |
+| Get Tipset | Retrieve tipset information |
+| Get Gas Estimate | Estimate gas for message execution |
 
-### Storage Deal
-- Create Deal, Get Deal Info/Status
-- List Deals, Query Ask, Verify Data
+### 2. Wallet
 
-### Storage Provider
-- Get Provider Info, List Providers
-- Get Power/Faults/Sectors/Balance
-- Get Proving Deadline
+| Operation | Description |
+|-----------|-------------|
+| Create Wallet | Generate a new wallet address |
+| Get Balance | Retrieve wallet balance |
+| List Wallets | Get all wallet addresses |
+| Export Wallet | Export wallet private key |
+| Sign Message | Sign a message with wallet |
+| Verify Signature | Verify message signature |
 
-### Retrieval
-- Create Retrieval Deal, Get Offer/Status
-- Query Providers, Start/Cancel Retrieval
+### 3. Message
 
-### DataCap (Fil+)
-- Get Balance/Allocations
-- Get Verified Clients/Notaries
-- Request DataCap
+| Operation | Description |
+|-----------|-------------|
+| Send Message | Send a message to the network |
+| Get Message | Retrieve message by CID |
+| List Messages | Get messages for an address |
+| Wait Message | Wait for message confirmation |
+| Search Messages | Search messages by criteria |
+| Get Message Status | Check message execution status |
 
-### Sector
-- Get Sector Info/State/Expiration
-- List Sectors, Get Faults/Recoveries
-- Get Proving Deadlines
+### 4. Storage
 
-### Power
-- Get Network/Miner Power
-- Get Power Table, Network Stats
+| Operation | Description |
+|-----------|-------------|
+| Store File | Store file on Filecoin network |
+| Retrieve File | Retrieve file from storage |
+| List Deals | Get storage deals |
+| Get Deal Status | Check storage deal status |
+| Create Deal | Initiate new storage deal |
+| List Miners | Get available storage miners |
 
-### Market
-- Get Balance, Add/Withdraw Funds
-- Get Escrow/Locked, Get Deal States
+### 5. Smart Contract
 
-### Miner
-- Get Info/Power/Balance
-- Get Faults/Deadlines/Partitions
-- Get Proving Period
+| Operation | Description |
+|-----------|-------------|
+| Deploy Contract | Deploy smart contract to network |
+| Call Method | Execute contract method |
+| Get Contract Info | Retrieve contract details |
+| List Events | Get contract events |
+| Estimate Gas | Estimate gas for contract call |
+| Get Code | Retrieve contract bytecode |
 
-### FEVM (Filecoin EVM)
-- Get ETH Balance, Send Transaction
-- Deploy/Call Contract, Get Logs
-- Estimate Gas, Convert Address (f4 ↔ 0x)
+### 6. IPFS
 
-### FVM (Filecoin VM)
-- Invoke Actor, Get Actor State/Code
-- List Actors, Get Events
-
-### Chain
-- Get Head/Tipset/Block/Messages
-- Get Stats/Version/Genesis
-
-### State
-- Get State at Tipset, Get Actor
-- Read State, Get Circulating Supply
-
-### Gas
-- Estimate Premium/Limit/Gas
-- Get Base Fee/Fee Cap
-
-### Multisig
-- Create Multisig, Propose/Approve/Cancel
-- Add/Remove/Swap Signer, Change Threshold
-
-### Payment Channel
-- Create/Update/Settle/Collect Channel
-- Allocate Lane, Submit Voucher
-
-### IPFS
-- Add/Get File, Pin/Unpin
-- Get Stats, Import/Export CAR
-
-### Utility
-- Convert Units, Validate/Format CID
-- Convert Address, Sign/Verify Data
-- Get Network Info/Version
-
-## Trigger Node
-
-The **Filecoin Trigger** node monitors blockchain events in real-time:
-
-| Trigger Type | Description |
-|--------------|-------------|
-| New Tipset | Triggers on new chain block |
-| Balance Changed | Monitors address balance changes |
-| Message Confirmed | Triggers when a message is confirmed |
-| FIL Received | Monitors incoming FIL transfers |
-| Deal Status Changed | Monitors storage deal state changes |
-| Miner Power Changed | Triggers on miner power changes |
-| Base Fee Changed | Monitors gas base fee changes |
+| Operation | Description |
+|-----------|-------------|
+| Add File | Add file to IPFS |
+| Get File | Retrieve file from IPFS |
+| Pin Content | Pin content to prevent garbage collection |
+| Unpin Content | Remove pin from content |
+| List Pins | Get all pinned content |
+| Get Node Info | Retrieve IPFS node information |
 
 ## Usage Examples
 
-### Send FIL
-
 ```javascript
+// Store a file on Filecoin network
 {
-  "resource": "transaction",
-  "operation": "sendFil",
-  "toAddress": "f1xyz...",
-  "amount": "1.5"
+  "resource": "Storage",
+  "operation": "Store File",
+  "fileData": "base64encodedfiledata",
+  "fileName": "document.pdf",
+  "duration": 518400,
+  "price": "0.0001"
 }
 ```
 
-### Check Wallet Balance
-
 ```javascript
+// Send FIL tokens between wallets
 {
-  "resource": "wallet",
-  "operation": "getBalance",
-  "address": "f1abc..."
-}
-// Returns: { balance: "1500000000000000000", formatted: "1.5 FIL" }
-```
-
-### Deploy Smart Contract (FEVM)
-
-```javascript
-{
-  "resource": "fevm",
-  "operation": "deployContract",
-  "bytecode": "0x608060...",
-  "constructorArgs": ["MyToken", "MTK", "1000000000000000000000"]
+  "resource": "Message",
+  "operation": "Send Message",
+  "from": "f1abc123def456...",
+  "to": "f1xyz789uvw012...",
+  "value": "1.5",
+  "gasLimit": 1000000,
+  "gasFeeCap": "0.000001"
 }
 ```
 
-### Add File to IPFS
-
 ```javascript
+// Query blockchain for latest block
 {
-  "resource": "ipfs",
-  "operation": "addFile",
-  "content": "Hello Filecoin!",
-  "filename": "hello.txt"
+  "resource": "Chain",
+  "operation": "Get Chain Head",
+  "includeMessages": true,
+  "includeReceipts": false
 }
-// Returns: { cid: "Qm...", size: "16" }
 ```
 
-## Filecoin Concepts
-
-### Address Types
-- **f0**: ID addresses (actor IDs)
-- **f1**: Secp256k1 addresses (most common wallets)
-- **f2**: Actor addresses (smart contracts)
-- **f3**: BLS addresses (validators)
-- **f4**: Delegated addresses (FEVM 0x compatibility)
-
-### Units
-- **FIL**: Base unit (1 FIL = 10^18 attoFIL)
-- **attoFIL**: Smallest unit (like Wei in Ethereum)
-- **nanoFIL**: 10^9 attoFIL
-
-### Storage Deals
-Storage deals are agreements between clients and storage providers to store data for a specified duration. Deals go through several states: Proposed → Published → Active → Expired.
-
-## Networks
-
-| Network | Chain ID | RPC Endpoint |
-|---------|----------|--------------|
-| Mainnet | 314 | https://api.node.glif.io/rpc/v1 |
-| Calibration | 314159 | https://api.calibration.node.glif.io/rpc/v1 |
-| Hyperspace | 3141 | https://api.hyperspace.node.glif.io/rpc/v1 |
+```javascript
+// Deploy smart contract
+{
+  "resource": "SmartContract",
+  "operation": "Deploy Contract",
+  "bytecode": "0x608060405234801561001057600080fd5b50...",
+  "constructor": [],
+  "gasLimit": 5000000,
+  "gasPrice": "0.000001"
+}
+```
 
 ## Error Handling
 
-The node implements comprehensive error handling:
-- Network connectivity errors with retry logic
-- RPC response validation
-- Address format validation
-- Transaction confirmation monitoring
-- Gas estimation fallbacks
-
-## Security Best Practices
-
-1. **Never expose private keys** in logs or error messages
-2. **Use environment variables** for sensitive credentials
-3. **Test on Calibration testnet** before mainnet deployment
-4. **Validate all addresses** before transactions
-5. **Set appropriate gas limits** to prevent failed transactions
+| Error | Description | Solution |
+|-------|-------------|----------|
+| Invalid API Key | Authentication failed | Verify API key in credentials |
+| Network Timeout | Request exceeded timeout limit | Increase timeout or check network connectivity |
+| Insufficient Balance | Not enough FIL for transaction | Add funds to wallet or reduce transaction amount |
+| Invalid Address | Wallet address format incorrect | Verify address format (f1...) |
+| Gas Estimation Failed | Unable to estimate gas costs | Check message parameters and network status |
+| Storage Deal Failed | Storage deal could not be created | Verify file size, duration, and miner availability |
 
 ## Development
 
 ```bash
-# Install dependencies
 npm install
-
-# Build the project
 npm run build
-
-# Run tests
 npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Lint code
 npm run lint
-
-# Fix lint issues
-npm run lint:fix
-
-# Format code
-npm run format
+npm run dev
 ```
 
 ## Author
@@ -327,33 +218,24 @@ This n8n community node is licensed under the **Business Source License 1.1**.
 Permitted for personal, educational, research, and internal business use.
 
 ### Commercial Use
-Use of this node within any SaaS, PaaS, hosted platform, managed service,
-or paid automation offering requires a commercial license.
+Use of this node within any SaaS, PaaS, hosted platform, managed service, or paid automation offering requires a commercial license.
 
-For licensing inquiries:
-**licensing@velobpa.com**
+For licensing inquiries: **licensing@velobpa.com**
 
 See [LICENSE](LICENSE), [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md), and [LICENSING_FAQ.md](LICENSING_FAQ.md) for details.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please ensure:
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Code follows existing style conventions
+2. All tests pass (`npm test`)
+3. Linting passes (`npm run lint`)
+4. Documentation is updated for new features
+5. Commit messages are descriptive
 
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/Velocity-BPA/n8n-nodes-filecoin/issues)
-- **Documentation**: [Filecoin Docs](https://docs.filecoin.io/)
-- **n8n Community**: [n8n Community Forum](https://community.n8n.io/)
-
-## Acknowledgments
-
-- [Filecoin](https://filecoin.io/) - Decentralized storage network
-- [n8n](https://n8n.io/) - Workflow automation platform
-- [Glif](https://glif.io/) - Filecoin tooling and APIs
-- [Protocol Labs](https://protocol.ai/) - IPFS and Filecoin development
+- **Filecoin Documentation**: [docs.filecoin.io](https://docs.filecoin.io)
+- **Filecoin Community**: [filecoin.io/community](https://filecoin.io/community)
