@@ -1,85 +1,43 @@
 {
-  "name": "n8n-nodes-filecoin",
+  "name": "@velocity-bpa/n8n-nodes-filecoin",
   "version": "1.0.0",
-  "description": "n8n community node for Filecoin blockchain - Storage deals, FIL transactions, FEVM, DataCap, and more",
-  "keywords": [
-    "n8n-community-node-package",
-    "n8n",
-    "filecoin",
-    "fil",
-    "blockchain",
-    "web3",
-    "storage",
-    "ipfs",
-    "fevm",
-    "datacap",
-    "storage-deals",
-    "cryptocurrency"
-  ],
-  "license": "BUSL-1.1",
-  "homepage": "https://github.com/Velocity-BPA/n8n-nodes-filecoin",
-  "author": {
-    "name": "Velocity BPA",
-    "email": "licensing@velobpa.com",
-    "url": "https://velobpa.com"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Velocity-BPA/n8n-nodes-filecoin.git"
-  },
+  "description": "n8n community node for Filecoin",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "main": "dist/nodes/Filecoin/Filecoin.node.js",
   "engines": {
     "node": ">=18.0.0"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "packageManager": "pnpm@9.1.4",
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
     "build": "tsc && gulp build:icons",
     "dev": "tsc --watch",
-    "format": "prettier --write .",
-    "lint": "eslint nodes credentials --ext .ts",
-    "lint:fix": "eslint nodes credentials --ext .ts --fix",
-    "prepublishOnly": "npm run build",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "format": "prettier nodes credentials --write",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "prepublishOnly": "npm run build"
   },
-  "files": [
-    "dist"
-  ],
-  "n8n": {
-    "n8nNodesApiVersion": 1,
-    "credentials": [
-      "dist/credentials/FilecoinNetwork.credentials.js",
-      "dist/credentials/StorageProvider.credentials.js",
-      "dist/credentials/Fevm.credentials.js"
-    ],
-    "nodes": [
-      "dist/nodes/Filecoin/Filecoin.node.js",
-      "dist/nodes/Filecoin/FilecoinTrigger.node.js"
-    ]
+  "dependencies": {
+    "axios": "^1.6.0"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/jest": "^29.5.11",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.15.0",
-    "eslint": "^8.54.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-n8n-nodes-base": "^1.16.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.0",
     "gulp": "^4.0.2",
     "jest": "^29.7.0",
     "n8n-workflow": "*",
-    "prettier": "^3.1.0",
-    "ts-jest": "^29.1.1",
-    "typescript": "^5.3.2"
-  },
-  "dependencies": {
-    "@glif/filecoin-address": "^3.0.12",
-    "@glif/filecoin-number": "^2.0.58",
-    "@zondax/filecoin-signing-tools": "^0.20.0",
-    "ethers": "^6.9.0",
-    "multiformats": "^13.0.0",
-    "axios": "^1.6.2",
-    "bignumber.js": "^9.1.2"
+    "prettier": "^3.2.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.3.0"
   },
   "peerDependencies": {
     "n8n-workflow": "*"
