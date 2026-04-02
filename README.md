@@ -8,25 +8,25 @@
 >
 > For licensing information, visit https://velobpa.com/licensing or contact licensing@velobpa.com.
 
-This n8n community node provides comprehensive integration with the Filecoin network, featuring 6 core resources for blockchain operations, decentralized storage, and smart contract interactions. Seamlessly interact with Filecoin's distributed storage network, manage wallets, execute transactions, and leverage IPFS capabilities directly within your n8n workflows.
+This n8n community node provides seamless integration with the Filecoin network, enabling developers to interact with decentralized storage, blockchain data, and network operations. With 6 comprehensive resources and extensive operation support, it facilitates storage deal management, wallet operations, message handling, and network monitoring within your n8n workflows.
 
 ![n8n Community Node](https://img.shields.io/badge/n8n-Community%20Node-blue)
 ![License](https://img.shields.io/badge/license-BSL--1.1-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
-![Filecoin](https://img.shields.io/badge/Filecoin-Network-orange)
-![IPFS](https://img.shields.io/badge/IPFS-Enabled-green)
-![Blockchain](https://img.shields.io/badge/Blockchain-Storage-purple)
+![Filecoin](https://img.shields.io/badge/Filecoin-Network-cyan)
+![IPFS](https://img.shields.io/badge/IPFS-Compatible-green)
+![Blockchain](https://img.shields.io/badge/Blockchain-Decentralized%20Storage-purple)
 
 ## Features
 
-- **Chain Operations** - Query blockchain state, retrieve blocks, and monitor network statistics
-- **Wallet Management** - Create wallets, check balances, and manage FIL transactions
-- **Message Handling** - Send messages, track confirmations, and retrieve transaction history
-- **Decentralized Storage** - Store and retrieve files using Filecoin's storage network
-- **Smart Contract Integration** - Deploy, interact with, and monitor smart contracts on Filecoin
-- **IPFS Support** - Pin content, retrieve files, and manage distributed content addressing
-- **Real-time Monitoring** - Track storage deals, miner status, and network health
-- **Comprehensive Error Handling** - Robust error management with detailed logging
+- **Complete Storage Management** - Create, monitor, and manage Filecoin storage deals with comprehensive lifecycle tracking
+- **Wallet Operations** - Perform wallet balance checks, transaction creation, and address management across the network
+- **Blockchain Interaction** - Access chain head data, block information, and network state for monitoring and analytics
+- **Actor System Integration** - Interact with Filecoin actors, retrieve state information, and execute actor-specific operations
+- **Message Broadcasting** - Send, track, and verify messages on the Filecoin network with detailed status monitoring
+- **Network Analytics** - Monitor network statistics, peer information, and protocol versions for operational insights
+- **Real-time Monitoring** - Track deal status, transaction confirmations, and network health in automated workflows
+- **Enterprise Security** - Secure API key authentication with comprehensive error handling and retry mechanisms
 
 ## Installation
 
@@ -61,10 +61,9 @@ n8n start
 
 | Field | Description | Required |
 |-------|-------------|----------|
-| API Key | Your Filecoin API key for authentication | Yes |
-| Network | Target network (mainnet, testnet, devnet) | Yes |
-| RPC Endpoint | Custom RPC endpoint URL (optional) | No |
-| Timeout | Request timeout in milliseconds (default: 30000) | No |
+| API Key | Your Filecoin node API key or access token | Yes |
+| Node URL | Filecoin node endpoint URL (e.g., https://api.node.glif.io) | Yes |
+| Network | Target network (mainnet, calibration, etc.) | No |
 
 ## Resources & Operations
 
@@ -72,114 +71,165 @@ n8n start
 
 | Operation | Description |
 |-----------|-------------|
-| Get Block | Retrieve block information by CID or height |
-| Get Chain Head | Get the current chain head |
-| Get Actor | Retrieve actor information by address |
-| Get Receipt | Get message receipt by CID |
-| Get Tipset | Retrieve tipset information |
-| Get Gas Estimate | Estimate gas for message execution |
+| Get Head | Retrieve the current chain head information |
+| Get Block | Get specific block data by CID or height |
+| Get Messages | Retrieve messages from a specific block |
+| Get Parent Receipts | Get receipts for parent block messages |
+| Get Tipset | Retrieve tipset information by height or key |
+| Read State | Read current chain state information |
 
-### 2. Wallet
+### 2. Actor
 
 | Operation | Description |
 |-----------|-------------|
-| Create Wallet | Generate a new wallet address |
-| Get Balance | Retrieve wallet balance |
-| List Wallets | Get all wallet addresses |
-| Export Wallet | Export wallet private key |
-| Sign Message | Sign a message with wallet |
-| Verify Signature | Verify message signature |
+| Get Actor | Retrieve actor information by address |
+| Get State | Get current actor state data |
+| List Actors | List all actors in the system |
+| Get Code | Retrieve actor code information |
+| Get Actor Events | Get events emitted by an actor |
+| Call Method | Execute actor method calls |
 
 ### 3. Message
 
 | Operation | Description |
 |-----------|-------------|
-| Send Message | Send a message to the network |
-| Get Message | Retrieve message by CID |
-| List Messages | Get messages for an address |
-| Wait Message | Wait for message confirmation |
-| Search Messages | Search messages by criteria |
-| Get Message Status | Check message execution status |
+| Send Message | Broadcast a message to the Filecoin network |
+| Get Message | Retrieve message details by CID |
+| Get Receipt | Get message execution receipt |
+| Search Messages | Search for messages by criteria |
+| Estimate Gas | Estimate gas costs for message execution |
+| Wait for Message | Wait for message confirmation and results |
 
-### 4. Storage
-
-| Operation | Description |
-|-----------|-------------|
-| Store File | Store file on Filecoin network |
-| Retrieve File | Retrieve file from storage |
-| List Deals | Get storage deals |
-| Get Deal Status | Check storage deal status |
-| Create Deal | Initiate new storage deal |
-| List Miners | Get available storage miners |
-
-### 5. Smart Contract
+### 4. Wallet
 
 | Operation | Description |
 |-----------|-------------|
-| Deploy Contract | Deploy smart contract to network |
-| Call Method | Execute contract method |
-| Get Contract Info | Retrieve contract details |
-| List Events | Get contract events |
-| Estimate Gas | Estimate gas for contract call |
-| Get Code | Retrieve contract bytecode |
+| Get Balance | Check wallet balance for an address |
+| List Wallets | List all available wallet addresses |
+| Create Wallet | Generate a new wallet address |
+| Import Wallet | Import an existing wallet |
+| Sign Message | Sign a message with wallet private key |
+| Verify Signature | Verify message signature authenticity |
 
-### 6. IPFS
+### 5. Storage
 
 | Operation | Description |
 |-----------|-------------|
-| Add File | Add file to IPFS |
-| Get File | Retrieve file from IPFS |
-| Pin Content | Pin content to prevent garbage collection |
-| Unpin Content | Remove pin from content |
-| List Pins | Get all pinned content |
-| Get Node Info | Retrieve IPFS node information |
+| Create Deal | Initiate a new storage deal |
+| Get Deal | Retrieve storage deal information |
+| List Deals | List all storage deals by criteria |
+| Get Deal Status | Check current status of storage deals |
+| Calculate Price | Estimate storage costs and pricing |
+| Find Miners | Discover available storage miners |
+
+### 6. Network
+
+| Operation | Description |
+|-----------|-------------|
+| Get Network Info | Retrieve network statistics and information |
+| Get Peers | List connected network peers |
+| Get Version | Get node version and protocol information |
+| Sync Status | Check node synchronization status |
+| Get Network Name | Retrieve current network identifier |
+| Connection Status | Monitor network connection health |
 
 ## Usage Examples
 
 ```javascript
-// Store a file on Filecoin network
+// Monitor storage deal status
 {
-  "resource": "Storage",
-  "operation": "Store File",
-  "fileData": "base64encodedfiledata",
-  "fileName": "document.pdf",
-  "duration": 518400,
-  "price": "0.0001"
+  "nodes": [
+    {
+      "name": "Check Deal Status",
+      "type": "n8n-nodes-filecoin.Filecoin",
+      "parameters": {
+        "resource": "Storage",
+        "operation": "Get Deal Status",
+        "dealCid": "bafyreiabcd1234567890abcdef"
+      }
+    }
+  ]
 }
 ```
 
 ```javascript
-// Send FIL tokens between wallets
+// Check wallet balance and send payment
 {
-  "resource": "Message",
-  "operation": "Send Message",
-  "from": "f1abc123def456...",
-  "to": "f1xyz789uvw012...",
-  "value": "1.5",
-  "gasLimit": 1000000,
-  "gasFeeCap": "0.000001"
+  "nodes": [
+    {
+      "name": "Get Wallet Balance",
+      "type": "n8n-nodes-filecoin.Filecoin",
+      "parameters": {
+        "resource": "Wallet",
+        "operation": "Get Balance",
+        "address": "f1abc123def456ghi789jkl012mno345pqr678stu"
+      }
+    },
+    {
+      "name": "Send Payment",
+      "type": "n8n-nodes-filecoin.Filecoin",
+      "parameters": {
+        "resource": "Message",
+        "operation": "Send Message",
+        "from": "f1abc123def456ghi789jkl012mno345pqr678stu",
+        "to": "f1xyz789uvw456rst123opq890lmn567hij234klm",
+        "value": "1000000000000000000"
+      }
+    }
+  ]
 }
 ```
 
 ```javascript
-// Query blockchain for latest block
+// Monitor network health and sync status
 {
-  "resource": "Chain",
-  "operation": "Get Chain Head",
-  "includeMessages": true,
-  "includeReceipts": false
+  "nodes": [
+    {
+      "name": "Check Network Status",
+      "type": "n8n-nodes-filecoin.Filecoin",
+      "parameters": {
+        "resource": "Network",
+        "operation": "Sync Status"
+      }
+    },
+    {
+      "name": "Get Chain Head",
+      "type": "n8n-nodes-filecoin.Filecoin",
+      "parameters": {
+        "resource": "Chain",
+        "operation": "Get Head"
+      }
+    }
+  ]
 }
 ```
 
 ```javascript
-// Deploy smart contract
+// Create and monitor storage deal
 {
-  "resource": "SmartContract",
-  "operation": "Deploy Contract",
-  "bytecode": "0x608060405234801561001057600080fd5b50...",
-  "constructor": [],
-  "gasLimit": 5000000,
-  "gasPrice": "0.000001"
+  "nodes": [
+    {
+      "name": "Find Storage Miners",
+      "type": "n8n-nodes-filecoin.Filecoin",
+      "parameters": {
+        "resource": "Storage",
+        "operation": "Find Miners",
+        "minPower": "32GiB",
+        "maxPrice": "0.0000000001"
+      }
+    },
+    {
+      "name": "Create Storage Deal",
+      "type": "n8n-nodes-filecoin.Filecoin",
+      "parameters": {
+        "resource": "Storage",
+        "operation": "Create Deal",
+        "dataCid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+        "miner": "f01000",
+        "duration": 1555200
+      }
+    }
+  ]
 }
 ```
 
@@ -187,12 +237,12 @@ n8n start
 
 | Error | Description | Solution |
 |-------|-------------|----------|
-| Invalid API Key | Authentication failed | Verify API key in credentials |
-| Network Timeout | Request exceeded timeout limit | Increase timeout or check network connectivity |
-| Insufficient Balance | Not enough FIL for transaction | Add funds to wallet or reduce transaction amount |
-| Invalid Address | Wallet address format incorrect | Verify address format (f1...) |
-| Gas Estimation Failed | Unable to estimate gas costs | Check message parameters and network status |
-| Storage Deal Failed | Storage deal could not be created | Verify file size, duration, and miner availability |
+| Invalid API Key | Authentication failed with provided credentials | Verify API key is correct and has sufficient permissions |
+| Network Timeout | Request timed out waiting for network response | Check node connectivity and increase timeout settings |
+| Insufficient Funds | Wallet balance too low for transaction | Verify wallet has adequate FIL balance for operation |
+| Actor Not Found | Specified actor address does not exist | Confirm actor address is valid and properly formatted |
+| Deal Creation Failed | Storage deal proposal was rejected | Check deal parameters, miner availability, and pricing |
+| Message Pending | Transaction is still being processed | Wait for confirmation or check message status periodically |
 
 ## Development
 
