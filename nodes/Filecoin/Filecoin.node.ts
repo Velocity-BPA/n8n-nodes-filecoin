@@ -53,6 +53,10 @@ export class Filecoin implements INodeType {
             value: 'chain',
           },
           {
+            name: 'Actor',
+            value: 'actor',
+          },
+          {
             name: 'Wallet',
             value: 'wallet',
           },
@@ -71,6 +75,10 @@ export class Filecoin implements INodeType {
           {
             name: 'IPFS',
             value: 'iPFS',
+          },
+          {
+            name: 'Network',
+            value: 'network',
           }
         ],
         default: 'chain',
@@ -117,8 +125,35 @@ export class Filecoin implements INodeType {
       description: 'Read actor state at tipset',
       action: 'Read actor state',
     },
+    {
+      name: 'Get Parent Receipts',
+      value: 'getParentReceipts',
+      description: 'Get receipts for messages in parent tipset',
+      action: 'Get parent receipts',
+    },
+    {
+      name: 'Get Parent Messages',
+      value: 'getParentMessages',
+      description: 'Get messages from parent tipset',
+      action: 'Get parent messages',
+    },
   ],
   default: 'getHead',
+},
+{
+  displayName: 'Operation',
+  name: 'operation',
+  type: 'options',
+  noDataExpression: true,
+  displayOptions: { show: { resource: ['actor'] } },
+  options: [
+    { name: 'Get Actor State', value: 'getActor', description: 'Get actor state at tipset', action: 'Get actor state' },
+    { name: 'List Actors', value: 'listActors', description: 'List all actors at tipset', action: 'List all actors' },
+    { name: 'Get Account Key', value: 'getAccountKey', description: 'Get public key for account actor', action: 'Get account public key' },
+    { name: 'Lookup ID', value: 'lookupId', description: 'Get ID address for actor', action: 'Lookup actor ID' },
+    { name: 'Call Method', value: 'callMethod', description: 'Call actor method without state changes', action: 'Call actor method' },
+  ],
+  default: 'getActor',
 },
 {
   displayName: 'Operation',
@@ -160,6 +195,12 @@ export class Filecoin implements INodeType {
       value: 'walletDelete',
       description: 'Delete a wallet address',
       action: 'Delete wallet address',
+    },
+    {
+      name: 'Check Address',
+      value: 'checkAddress',
+      description: 'Check if wallet has address',
+      action: 'Check if wallet has address',
     },
   ],
   default: 'walletNew',
@@ -205,6 +246,18 @@ export class Filecoin implements INodeType {
       description: 'Search for a message by CID',
       action: 'Search message by CID',
     },
+    {
+      name: 'Get Nonce',
+      value: 'getNonce',
+      description: 'Get the next nonce for an address',
+      action: 'Get next nonce for address',
+    },
+    {
+      name: 'Get Receipt',
+      value: 'getReceipt',
+      description: 'Get message execution receipt',
+      action: 'Get message execution receipt',
+    },
   ],
   default: 'mpoolPush',
 },
@@ -248,6 +301,30 @@ export class Filecoin implements INodeType {
       value: 'stateListMiners',
       description: 'List all miners in the network',
       action: 'List all miners',
+    },
+    {
+      name: 'Get All Storage Deals',
+      value: 'getStorageDeals',
+      description: 'Get all storage deals on the network',
+      action: 'Get all storage deals',
+    },
+    {
+      name: 'Get Market Balance',
+      value: 'getMarketBalance',
+      description: 'Get market actor balance for an address',
+      action: 'Get market balance',
+    },
+    {
+      name: 'Get Miner Power',
+      value: 'getMinerPower',
+      description: 'Get miner power information',
+      action: 'Get miner power',
+    },
+    {
+      name: 'Get Miner Deadlines',
+      value: 'getMinerDeadlines',
+      description: 'Get miner proving deadlines',
+      action: 'Get miner deadlines',
     },
   ],
   default: 'clientListDeals',
@@ -340,6 +417,50 @@ export class Filecoin implements INodeType {
   ],
   default: 'clientImport',
 },
+{
+	displayName: 'Operation',
+	name: 'operation',
+	type: 'options',
+	noDataExpression: true,
+	displayOptions: {
+		show: {
+			resource: ['network'],
+		},
+	},
+	options: [
+		{
+			name: 'Get Connected Peers',
+			value: 'getPeers',
+			description: 'Retrieve list of connected peers',
+			action: 'Get connected peers',
+		},
+		{
+			name: 'Connect to Peer',
+			value: 'connectPeer',
+			description: 'Connect to a specific peer',
+			action: 'Connect to peer',
+		},
+		{
+			name: 'Get Listening Addresses',
+			value: 'getListeningAddresses',
+			description: 'Get node listening addresses',
+			action: 'Get listening addresses',
+		},
+		{
+			name: 'Get Sync Status',
+			value: 'getSyncStatus',
+			description: 'Get blockchain synchronization status',
+			action: 'Get sync status',
+		},
+		{
+			name: 'Get Node Version',
+			value: 'getVersion',
+			description: 'Get node version information',
+			action: 'Get node version',
+		},
+	],
+	default: 'getPeers',
+},
       // Parameter definitions
 {
   displayName: 'Block CID',
@@ -404,6 +525,47 @@ export class Filecoin implements INodeType {
   placeholder: 'Leave empty for chain head',
 },
 {
+  displayName: 'Block CID',
+  name: 'blockCid',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['chain'],
+      operation: ['getParentReceipts', 'getParentMessages']
+    }
+  },
+  default: '',
+  description: 'The CID (Content Identifier) of the block'
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['actor'], operation: ['getActor', 'getAccountKey', 'lookupId'] } },
+  default: '',
+  description: 'The actor address',
+},
+{
+  displayName: 'Tipset Key',
+  name: 'tipsetKey',
+  type: 'string',
+  required: false,
+  displayOptions: { show: { resource: ['actor'], operation: ['getActor', 'listActors', 'getAccountKey', 'lookupId', 'callMethod'] } },
+  default: '',
+  description: 'The tipset key (leave empty for latest)',
+},
+{
+  displayName: 'Message',
+  name: 'message',
+  type: 'json',
+  required: true,
+  displayOptions: { show: { resource: ['actor'], operation: ['callMethod'] } },
+  default: '{}',
+  description: 'The message object for the method call',
+},
+{
   displayName: 'Key Type',
   name: 'keyType',
   type: 'options',
@@ -435,7 +597,7 @@ export class Filecoin implements INodeType {
   displayOptions: {
     show: {
       resource: ['wallet'],
-      operation: ['walletBalance', 'walletSign', 'walletDelete'],
+      operation: ['walletBalance', 'walletSign', 'walletDelete', 'checkAddress'],
     },
   },
   default: '',
@@ -477,7 +639,7 @@ export class Filecoin implements INodeType {
   displayOptions: {
     show: {
       resource: ['message'],
-      operation: ['mpoolPending', 'gasEstimateGasLimit'],
+      operation: ['mpoolPending', 'gasEstimateGasLimit', 'getReceipt'],
     },
   },
   default: '[]',
@@ -491,7 +653,7 @@ export class Filecoin implements INodeType {
   displayOptions: {
     show: {
       resource: ['message'],
-      operation: ['stateWaitMsg', 'stateSearchMsg'],
+      operation: ['stateWaitMsg', 'stateSearchMsg', 'getReceipt'],
     },
   },
   default: '',
@@ -524,6 +686,20 @@ export class Filecoin implements INodeType {
   },
   default: '{}',
   description: 'The message object for gas estimation',
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['message'],
+      operation: ['getNonce'],
+    },
+  },
+  default: '',
+  description: 'The Filecoin address to get the next nonce for',
 },
 {
   displayName: 'Deal Parameters',
@@ -561,7 +737,7 @@ export class Filecoin implements INodeType {
   displayOptions: {
     show: {
       resource: ['storage'],
-      operation: ['stateMinerInfo'],
+      operation: ['stateMinerInfo', 'getMinerInfo', 'getMinerPower', 'getMinerDeadlines'],
     },
   },
   default: '',
@@ -570,16 +746,30 @@ export class Filecoin implements INodeType {
 {
   displayName: 'Tipset Key',
   name: 'tipsetKey',
-  type: 'json',
+  type: 'string',
   required: false,
   displayOptions: {
     show: {
       resource: ['storage'],
-      operation: ['stateMinerInfo', 'stateListMiners'],
+      operation: ['stateMinerInfo', 'stateListMiners', 'getStorageDeals', 'getMarketBalance', 'getMinerInfo', 'getMinerPower', 'getMinerDeadlines'],
     },
   },
-  default: 'null',
-  description: 'The tipset key to query at, null for latest tipset',
+  default: '',
+  description: 'The tipset key to query at, empty for latest tipset',
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['storage'],
+      operation: ['getMarketBalance'],
+    },
+  },
+  default: '',
+  description: 'The Filecoin address to get market balance for',
 },
 {
   displayName: 'Transaction Object',
@@ -725,6 +915,21 @@ export class Filecoin implements INodeType {
   default: 0,
   description: 'The ID of the import to remove',
 },
+{
+	displayName: 'Peer Info',
+	name: 'peerInfo',
+	type: 'string',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['network'],
+			operation: ['connectPeer'],
+		},
+	},
+	default: '',
+	placeholder: '/ip4/192.168.1.1/tcp/1234/p2p/12D3KooW...',
+	description: 'Multiaddr string identifying the peer to connect to',
+},
     ],
   };
 
@@ -735,6 +940,8 @@ export class Filecoin implements INodeType {
     switch (resource) {
       case 'chain':
         return [await executeChainOperations.call(this, items)];
+      case 'actor':
+        return [await executeActorOperations.call(this, items)];
       case 'wallet':
         return [await executeWalletOperations.call(this, items)];
       case 'message':
@@ -745,6 +952,8 @@ export class Filecoin implements INodeType {
         return [await executeSmartContractOperations.call(this, items)];
       case 'iPFS':
         return [await executeIPFSOperations.call(this, items)];
+      case 'network':
+        return [await executeNetworkOperations.call(this, items)];
       default:
         throw new NodeOperationError(this.getNode(), `The resource "${resource}" is not supported`);
     }
@@ -915,6 +1124,48 @@ async function executeChainOperations(
           break;
         }
 
+        case 'getParentReceipts': {
+          const blockCid = this.getNodeParameter('blockCid', i) as string;
+          const requestBody = {
+            jsonrpc: '2.0',
+            method: 'Filecoin.ChainGetParentReceipts',
+            params: [{ '/': blockCid }],
+            id: 1
+          };
+          const options = { ...baseOptions, body: requestBody };
+          const response = await this.helpers.httpRequest(options) as any;
+          
+          if (response.error) {
+            throw new NodeApiError(this.getNode(), response.error, {
+              message: `Filecoin API Error: ${response.error.message}`,
+            });
+          }
+          
+          result = response.result;
+          break;
+        }
+        
+        case 'getParentMessages': {
+          const blockCid = this.getNodeParameter('blockCid', i) as string;
+          const requestBody = {
+            jsonrpc: '2.0',
+            method: 'Filecoin.ChainGetParentMessages',
+            params: [{ '/': blockCid }],
+            id: 1
+          };
+          const options = { ...baseOptions, body: requestBody };
+          const response = await this.helpers.httpRequest(options) as any;
+          
+          if (response.error) {
+            throw new NodeApiError(this.getNode(), response.error, {
+              message: `Filecoin API Error: ${response.error.message}`,
+            });
+          }
+          
+          result = response.result;
+          break;
+        }
+
         default:
           throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`, {
             itemIndex: i,
@@ -938,6 +1189,200 @@ async function executeChainOperations(
     }
   }
 
+  return returnData;
+}
+
+async function executeActorOperations(
+  this: IExecuteFunctions,
+  items: INodeExecutionData[],
+): Promise<INodeExecutionData[]> {
+  const returnData: INodeExecutionData[] = [];
+  const operation = this.getNodeParameter('operation', 0) as string;
+  const credentials = await this.getCredentials('filecoinApi') as any;
+  
+  for (let i = 0; i < items.length; i++) {
+    try {
+      let result: any;
+      
+      switch (operation) {
+        case 'getActor': {
+          const address = this.getNodeParameter('address', i) as string;
+          const tipsetKey = this.getNodeParameter('tipsetKey', i) as string;
+          
+          const params = [address];
+          if (tipsetKey) {
+            params.push([{ '/': tipsetKey }]);
+          } else {
+            params.push(null);
+          }
+          
+          const body = {
+            jsonrpc: '2.0',
+            method: 'Filecoin.StateGetActor',
+            params,
+            id: 1,
+          };
+          
+          const options: any = {
+            method: 'POST',
+            url: credentials.baseUrl,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${credentials.apiKey}`,
+            },
+            body: JSON.stringify(body),
+            json: true,
+          };
+          
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+        
+        case 'listActors': {
+          const tipsetKey = this.getNodeParameter('tipsetKey', i) as string;
+          
+          const params = [];
+          if (tipsetKey) {
+            params.push([{ '/': tipsetKey }]);
+          } else {
+            params.push(null);
+          }
+          
+          const body = {
+            jsonrpc: '2.0',
+            method: 'Filecoin.StateListActors',
+            params,
+            id: 1,
+          };
+          
+          const options: any = {
+            method: 'POST',
+            url: credentials.baseUrl,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${credentials.apiKey}`,
+            },
+            body: JSON.stringify(body),
+            json: true,
+          };
+          
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+        
+        case 'getAccountKey': {
+          const address = this.getNodeParameter('address', i) as string;
+          const tipsetKey = this.getNodeParameter('tipsetKey', i) as string;
+          
+          const params = [address];
+          if (tipsetKey) {
+            params.push([{ '/': tipsetKey }]);
+          } else {
+            params.push(null);
+          }
+          
+          const body = {
+            jsonrpc: '2.0',
+            method: 'Filecoin.StateAccountKey',
+            params,
+            id: 1,
+          };
+          
+          const options: any = {
+            method: 'POST',
+            url: credentials.baseUrl,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${credentials.apiKey}`,
+            },
+            body: JSON.stringify(body),
+            json: true,
+          };
+          
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+        
+        case 'lookupId': {
+          const address = this.getNodeParameter('address', i) as string;
+          const tipsetKey = this.getNodeParameter('tipsetKey', i) as string;
+          
+          const params = [address];
+          if (tipsetKey) {
+            params.push([{ '/': tipsetKey }]);
+          } else {
+            params.push(null);
+          }
+          
+          const body = {
+            jsonrpc: '2.0',
+            method: 'Filecoin.StateLookupID',
+            params,
+            id: 1,
+          };
+          
+          const options: any = {
+            method: 'POST',
+            url: credentials.baseUrl,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${credentials.apiKey}`,
+            },
+            body: JSON.stringify(body),
+            json: true,
+          };
+          
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+        
+        case 'callMethod': {
+          const message = this.getNodeParameter('message', i) as object;
+          const tipsetKey = this.getNodeParameter('tipsetKey', i) as string;
+          
+          const params = [message];
+          if (tipsetKey) {
+            params.push([{ '/': tipsetKey }]);
+          } else {
+            params.push(null);
+          }
+          
+          const body = {
+            jsonrpc: '2.0',
+            method: 'Filecoin.StateCall',
+            params,
+            id: 1,
+          };
+          
+          const options: any = {
+            method: 'POST',
+            url: credentials.baseUrl,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${credentials.apiKey}`,
+            },
+            body: JSON.stringify(body),
+            json: true,
+          };
+          
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+        
+        default:
+          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
+      }
+      
+      returnData.push({ json: result, pairedItem: { item: i } });
+    } catch (error: any) {
+      if (this.continueOnFail()) {
+        returnData.push({ json: { error: error.message }, pairedItem: { item: i } });
+      } else {
+        throw error;
+      }
+    }
+  }
+  
   return returnData;
 }
 
@@ -1154,6 +1599,27 @@ async function executeWalletOperations(
           break;
         }
 
+        case 'checkAddress': {
+          const address = this.getNodeParameter('address', i) as string;
+          const options = {
+            method: 'POST',
+            url: credentials.baseUrl || 'https://api.node.glif.io/rpc/v1',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${credentials.apiKey}`
+            },
+            body: {
+              jsonrpc: '2.0',
+              method: 'Filecoin.WalletHas',
+              params: [address],
+              id: 1
+            },
+            json: true
+          };
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
         default:
           throw new NodeOperationError(
             this.getNode(),
@@ -1291,6 +1757,40 @@ async function executeMessageOperations(
             { '/': messageCid },
             -1,
             true
+          ]);
+          
+          const options = {
+            ...baseOptions,
+            body: requestBody,
+          };
+          
+          const response = await this.helpers.httpRequest(options) as any;
+          result = response.result || response;
+          break;
+        }
+
+        case 'getNonce': {
+          const address = this.getNodeParameter('address', i) as string;
+          
+          requestBody = buildJsonRpcRequest('MpoolGetNonce', [address]);
+          
+          const options = {
+            ...baseOptions,
+            body: requestBody,
+          };
+          
+          const response = await this.helpers.httpRequest(options) as any;
+          result = response.result || response;
+          break;
+        }
+
+        case 'getReceipt': {
+          const messageCid = this.getNodeParameter('messageCid', i) as string;
+          const tipsetKey = this.getNodeParameter('tipsetKey', i) as any;
+          
+          requestBody = buildJsonRpcRequest('StateGetReceipt', [
+            { "/": messageCid }, 
+            tipsetKey
           ]);
           
           const options = {
@@ -1493,395 +1993,8 @@ async function executeStorageOperations(
           break;
         }
 
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
-      }
-
-      // Handle JSON-RPC 2.0 response format
-      if (result.error) {
-        throw new NodeApiError(this.getNode(), result.error, { 
-          message: `Filecoin API Error: ${result.error.message}`,
-          description: `Code: ${result.error.code}`,
-        });
-      }
-
-      const responseData = result.result || result;
-      returnData.push({ 
-        json: responseData, 
-        pairedItem: { item: i },
-      });
-
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({ 
-          json: { error: error.message }, 
-          pairedItem: { item: i },
-        });
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  return returnData;
-}
-
-async function executeSmartContractOperations(
-  this: IExecuteFunctions,
-  items: INodeExecutionData[],
-): Promise<INodeExecutionData[]> {
-  const returnData: INodeExecutionData[] = [];
-  const operation = this.getNodeParameter('operation', 0) as string;
-  const credentials = await this.getCredentials('filecoinApi') as any;
-
-  for (let i = 0; i < items.length; i++) {
-    try {
-      let result: any;
-      
-      switch (operation) {
-        case 'ethCall': {
-          const transaction = this.getNodeParameter('transaction', i) as any;
-          const blockNumber = this.getNodeParameter('blockNumber', i, 'latest') as string;
-          
-          let parsedTransaction: any;
-          if (typeof transaction === 'string') {
-            parsedTransaction = JSON.parse(transaction);
-          } else {
-            parsedTransaction = transaction;
-          }
-
-          const options: any = {
-            method: 'POST',
-            url: credentials.baseUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`,
-            },
-            body: {
-              jsonrpc: '2.0',
-              method: 'eth_call',
-              params: [parsedTransaction, blockNumber],
-              id: 1,
-            },
-            json: true,
-          };
-          
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'ethSendRawTransaction': {
-          const signedTransaction = this.getNodeParameter('signedTransaction', i) as string;
-
-          const options: any = {
-            method: 'POST',
-            url: credentials.baseUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`,
-            },
-            body: {
-              jsonrpc: '2.0',
-              method: 'eth_sendRawTransaction',
-              params: [signedTransaction],
-              id: 1,
-            },
-            json: true,
-          };
-          
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'ethGetTransactionReceipt': {
-          const transactionHash = this.getNodeParameter('transactionHash', i) as string;
-
-          const options: any = {
-            method: 'POST',
-            url: credentials.baseUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`,
-            },
-            body: {
-              jsonrpc: '2.0',
-              method: 'eth_getTransactionReceipt',
-              params: [transactionHash],
-              id: 1,
-            },
-            json: true,
-          };
-          
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'ethEstimateGas': {
-          const transaction = this.getNodeParameter('transaction', i) as any;
-          
-          let parsedTransaction: any;
-          if (typeof transaction === 'string') {
-            parsedTransaction = JSON.parse(transaction);
-          } else {
-            parsedTransaction = transaction;
-          }
-
-          const options: any = {
-            method: 'POST',
-            url: credentials.baseUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`,
-            },
-            body: {
-              jsonrpc: '2.0',
-              method: 'eth_estimateGas',
-              params: [parsedTransaction],
-              id: 1,
-            },
-            json: true,
-          };
-          
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'ethGetCode': {
-          const address = this.getNodeParameter('address', i) as string;
-          const blockNumber = this.getNodeParameter('blockNumber', i, 'latest') as string;
-
-          const options: any = {
-            method: 'POST',
-            url: credentials.baseUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`,
-            },
-            body: {
-              jsonrpc: '2.0',
-              method: 'eth_getCode',
-              params: [address, blockNumber],
-              id: 1,
-            },
-            json: true,
-          };
-          
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        default:
-          throw new NodeOperationError(
-            this.getNode(),
-            `Unknown operation: ${operation}`,
-            { itemIndex: i }
-          );
-      }
-
-      // Handle JSON-RPC error responses
-      if (result.error) {
-        throw new NodeApiError(this.getNode(), result.error, { itemIndex: i });
-      }
-
-      returnData.push({ 
-        json: result.result || result, 
-        pairedItem: { item: i } 
-      });
-
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({
-          json: { 
-            error: error.message,
-            operation: operation,
-            itemIndex: i
-          },
-          pairedItem: { item: i }
-        });
-      } else {
-        if (error instanceof NodeApiError || error instanceof NodeOperationError) {
-          throw error;
-        }
-        throw new NodeApiError(this.getNode(), error, { itemIndex: i });
-      }
-    }
-  }
-
-  return returnData;
-}
-
-async function executeIPFSOperations(
-  this: IExecuteFunctions,
-  items: INodeExecutionData[],
-): Promise<INodeExecutionData[]> {
-  const returnData: INodeExecutionData[] = [];
-  const operation = this.getNodeParameter('operation', 0) as string;
-  const credentials = await this.getCredentials('filecoinApi') as any;
-
-  for (let i = 0; i < items.length; i++) {
-    try {
-      let result: any;
-      let requestBody: any;
-
-      switch (operation) {
-        case 'clientImport': {
-          const importParams = this.getNodeParameter('importParams', i) as any;
-          const parsedParams = typeof importParams === 'string' ? JSON.parse(importParams) : importParams;
-          
-          requestBody = {
+        case 'getStorageDeals': {
+          const tipsetKey = this.getNodeParameter('tipsetKey', i) as string;
+          const requestBody = {
             jsonrpc: '2.0',
-            method: 'Filecoin.ClientImport',
-            params: [parsedParams],
-            id: 1,
-          };
-
-          const options: any = {
-            method: 'POST',
-            url: credentials.baseUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`,
-            },
-            body: requestBody,
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'clientRetrieve': {
-          const retrieveOrder = this.getNodeParameter('retrieveOrder', i) as any;
-          const parsedOrder = typeof retrieveOrder === 'string' ? JSON.parse(retrieveOrder) : retrieveOrder;
-          
-          requestBody = {
-            jsonrpc: '2.0',
-            method: 'Filecoin.ClientRetrieve',
-            params: [parsedOrder, null],
-            id: 1,
-          };
-
-          const options: any = {
-            method: 'POST',
-            url: credentials.baseUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`,
-            },
-            body: requestBody,
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'clientQueryAsk': {
-          const peerId = this.getNodeParameter('peerId', i) as string;
-          const minerAddress = this.getNodeParameter('minerAddress', i) as string;
-          
-          const peerInfo = {
-            ID: peerId,
-            Addrs: [],
-          };
-          
-          requestBody = {
-            jsonrpc: '2.0',
-            method: 'Filecoin.ClientQueryAsk',
-            params: [peerInfo, minerAddress],
-            id: 1,
-          };
-
-          const options: any = {
-            method: 'POST',
-            url: credentials.baseUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`,
-            },
-            body: requestBody,
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'clientListImports': {
-          requestBody = {
-            jsonrpc: '2.0',
-            method: 'Filecoin.ClientListImports',
-            params: [],
-            id: 1,
-          };
-
-          const options: any = {
-            method: 'POST',
-            url: credentials.baseUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`,
-            },
-            body: requestBody,
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'clientRemoveImport': {
-          const importID = this.getNodeParameter('importID', i) as number;
-          
-          requestBody = {
-            jsonrpc: '2.0',
-            method: 'Filecoin.ClientRemoveImport',
-            params: [importID],
-            id: 1,
-          };
-
-          const options: any = {
-            method: 'POST',
-            url: credentials.baseUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`,
-            },
-            body: requestBody,
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
-      }
-
-      if (result.error) {
-        throw new NodeApiError(this.getNode(), result, {
-          message: `Filecoin API error: ${result.error.message}`,
-          description: `Code: ${result.error.code}`,
-        });
-      }
-
-      returnData.push({ 
-        json: result.result || result, 
-        pairedItem: { item: i } 
-      });
-
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({ 
-          json: { error: error.message }, 
-          pairedItem: { item: i } 
-        });
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  return returnData;
-}
+            method: 'Fil
