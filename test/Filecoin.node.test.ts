@@ -74,158 +74,424 @@ describe('Chain Resource', () => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
       getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.node.glif.io/rpc/v0',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.node.glif.io/rpc/v1'
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
       helpers: {
         httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
+        requestWithAuthentication: jest.fn()
       },
     };
   });
 
-  test('should get chain head successfully', async () => {
-    const mockResponse = {
+  test('getHead operation should return chain head', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValue('getHead');
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
       jsonrpc: '2.0',
-      result: {
-        Cids: [{'/': 'bafy2bzaced...'}],
-        Blocks: [],
-        Height: 12345,
-      },
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'getHead';
-      return undefined;
+      result: { Height: 123456, Cids: [{ '/': 'bafy123' }] },
+      id: 1
     });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
     const result = await executeChainOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        method: 'POST',
-        body: expect.objectContaining({
-          method: 'Filecoin.ChainHead',
-          params: [],
-        }),
-      }),
-    );
+    expect(result[0].json.result.Height).toBe(123456);
   });
 
-  test('should get block by CID successfully', async () => {
-    const mockResponse = {
+  test('getTipSetByHeight operation should return tipset at height', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getTipSetByHeight')
+      .mockReturnValueOnce(100000)
+      .mockReturnValueOnce('');
+    
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
       jsonrpc: '2.0',
-      result: {
-        Miner: 'f01234',
-        Height: 12345,
-        Messages: { '/': 'bafy2bzaced...' },
-      },
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'getBlock';
-      if (param === 'cid') return 'bafy2bzaced123';
-      return undefined;
+      result: { Height: 100000, Cids: [{ '/': 'bafy456' }] },
+      id: 1
     });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
     const result = await executeChainOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        method: 'POST',
-        body: expect.objectContaining({
-          method: 'Filecoin.ChainGetBlock',
-          params: [{ '/': 'bafy2bzaced123' }],
-        }),
-      }),
-    );
+    expect(result[0].json.result.Height).toBe(100000);
   });
 
-  test('should get tipset by height successfully', async () => {
-    const mockResponse = {
+  test('getBlock operation should return block data', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getBlock')
+      .mockReturnValueOnce('bafy123abc');
+    
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
       jsonrpc: '2.0',
-      result: {
-        Cids: [{'/': 'bafy2bzaced...'}],
-        Blocks: [],
-        Height: 1000,
-      },
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'getTipsetByHeight';
-      if (param === 'height') return 1000;
-      return undefined;
+      result: { Height: 123456, Miner: 'f01234' },
+      id: 1
     });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
     const result = await executeChainOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        method: 'POST',
-        body: expect.objectContaining({
-          method: 'Filecoin.ChainGetTipSetByHeight',
-          params: [1000, null],
-        }),
-      }),
-    );
+    expect(result[0].json.result.Miner).toBe('f01234');
   });
 
-  test('should handle API errors', async () => {
-    const mockErrorResponse = {
-      jsonrpc: '2.0',
-      error: {
-        code: -32000,
-        message: 'Block not found',
-      },
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'getBlock';
-      if (param === 'cid') return 'invalid-cid';
-      return undefined;
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockErrorResponse);
-
-    await expect(
-      executeChainOperations.call(mockExecuteFunctions, [{ json: {} }]),
-    ).rejects.toThrow('Filecoin API Error: Block not found');
-  });
-
-  test('should handle continue on fail', async () => {
+  test('should handle API errors gracefully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValue('getHead');
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
     mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'getBlock';
-      if (param === 'cid') return 'invalid-cid';
-      return undefined;
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Network error'));
 
     const result = await executeChainOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual({ error: 'Network error' });
+    expect(result[0].json.error).toBe('API Error');
   });
+});
+
+describe('Actor Resource', () => {
+  let mockExecuteFunctions: any;
+  
+  beforeEach(() => {
+    mockExecuteFunctions = {
+      getNodeParameter: jest.fn(),
+      getCredentials: jest.fn().mockResolvedValue({ 
+        apiKey: 'test-key', 
+        baseUrl: 'https://api.node.glif.io/rpc/v1' 
+      }),
+      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+      continueOnFail: jest.fn().mockReturnValue(false),
+      helpers: { 
+        httpRequest: jest.fn(),
+        requestWithAuthentication: jest.fn()
+      },
+    };
+  });
+
+  it('should get actor state successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getActor')
+      .mockReturnValueOnce('f01234')
+      .mockReturnValueOnce('');
+    
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      jsonrpc: '2.0',
+      result: {
+        Code: { '/': 'bafk2bzacea...' },
+        Head: { '/': 'bafy2bzacea...' },
+        Nonce: 0,
+        Balance: '1000000000000000000'
+      },
+      id: 1
+    });
+
+    const result = await executeActorOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'POST',
+      url: 'https://api.node.glif.io/rpc/v1',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer test-key'
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'Filecoin.StateGetActor',
+        params: ['f01234', null],
+        id: 1
+      }),
+      json: true
+    });
+    
+    expect(result).toHaveLength(1);
+    expect(result[0].json.result).toBeDefined();
+  });
+
+  it('should handle get actor errors', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getActor')
+      .mockReturnValueOnce('invalid-address')
+      .mockReturnValueOnce('');
+    
+    mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Invalid actor address'));
+
+    const result = await executeActorOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    
+    expect(result).toHaveLength(1);
+    expect(result[0].json.error).toBe('Invalid actor address');
+  });
+
+  it('should list actors successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('listActors')
+      .mockReturnValueOnce('');
+    
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      jsonrpc: '2.0',
+      result: {
+        'f01': { Code: { '/': 'bafk2bzacea...' }, Head: { '/': 'bafy2bzacea...' }, Nonce: 0, Balance: '1000000000000000000' }
+      },
+      id: 1
+    });
+
+    const result = await executeActorOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'POST',
+      url: 'https://api.node.glif.io/rpc/v1',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer test-key'
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'Filecoin.StateListActors',
+        params: [null],
+        id: 1
+      }),
+      json: true
+    });
+    
+    expect(result).toHaveLength(1);
+    expect(result[0].json.result).toBeDefined();
+  });
+
+  it('should get account key successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getAccountKey')
+      .mockReturnValueOnce('f01234')
+      .mockReturnValueOnce('');
+    
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      jsonrpc: '2.0',
+      result: 'f3abc123...',
+      id: 1
+    });
+
+    const result = await executeActorOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    
+    expect(result).toHaveLength(1);
+    expect(result[0].json.result).toBe('f3abc123...');
+  });
+
+  it('should lookup ID successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('lookupId')
+      .mockReturnValueOnce('f3abc123...')
+      .mockReturnValueOnce('');
+    
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      jsonrpc: '2.0',
+      result: 'f01234',
+      id: 1
+    });
+
+    const result = await executeActorOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    
+    expect(result).toHaveLength(1);
+    expect(result[0].json.result).toBe('f01234');
+  });
+
+  it('should call method successfully', async () => {
+    const message = {
+      To: 'f01234',
+      From: 'f05678',
+      Value: '0',
+      Method: 0,
+      Params: null
+    };
+    
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('callMethod')
+      .mockReturnValueOnce(message)
+      .mockReturnValueOnce('');
+    
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      jsonrpc: '2.0',
+      result: {
+        MsgRct: {
+          ExitCode: 0,
+          Return: null,
+          GasUsed: 1000
+        }
+      },
+      id: 1
+    });
+
+    const result = await executeActorOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'POST',
+      url: 'https://api.node.glif.io/rpc/v1',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer test-key'
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'Filecoin.StateCall',
+        params: [message, null],
+        id: 1
+      }),
+      json: true
+    });
+    
+    expect(result).toHaveLength(1);
+    expect(result[0].json.result.MsgRct.ExitCode).toBe(0);
+  });
+});
+
+describe('Message Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-key',
+				baseUrl: 'https://api.node.glif.io/rpc/v1',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn(),
+			},
+		};
+	});
+
+	describe('submitMessage', () => {
+		it('should submit a signed message successfully', async () => {
+			const mockSignedMessage = {
+				Message: {
+					To: 'f1test',
+					From: 'f1sender',
+					Nonce: 0,
+					Value: '1000000000000000000',
+					Method: 0,
+					Params: '',
+					GasLimit: 1000000,
+					GasFeeCap: '1000000000',
+					GasPremium: '100000000',
+				},
+				Signature: { Type: 1, Data: 'mock-signature' },
+			};
+
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('submitMessage')
+				.mockReturnValueOnce(mockSignedMessage);
+			
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+				jsonrpc: '2.0',
+				result: { '/': 'bafy2bzaced...' },
+				id: 123,
+			});
+
+			const result = await executeMessageOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json.result).toEqual({ '/': 'bafy2bzaced...' });
+		});
+
+		it('should handle submitMessage errors', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('submitMessage')
+				.mockReturnValueOnce({});
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Invalid message'));
+
+			const result = await executeMessageOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result[0].json.error).toBe('Invalid message');
+		});
+	});
+
+	describe('getPendingMessages', () => {
+		it('should get pending messages successfully', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getPendingMessages')
+				.mockReturnValueOnce(null);
+			
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+				jsonrpc: '2.0',
+				result: [{ Message: {}, Signature: {} }],
+				id: 123,
+			});
+
+			const result = await executeMessageOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result).toHaveLength(1);
+			expect(Array.isArray(result[0].json.result)).toBe(true);
+		});
+	});
+
+	describe('getNonce', () => {
+		it('should get nonce successfully', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getNonce')
+				.mockReturnValueOnce('f1test123');
+			
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+				jsonrpc: '2.0',
+				result: 42,
+				id: 123,
+			});
+
+			const result = await executeMessageOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result[0].json.result).toBe(42);
+		});
+	});
+
+	describe('searchMessage', () => {
+		it('should search message successfully', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('searchMessage')
+				.mockReturnValueOnce('bafy2bzaced123');
+			
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+				jsonrpc: '2.0',
+				result: { Message: {}, Receipt: {} },
+				id: 123,
+			});
+
+			const result = await executeMessageOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result[0].json.result).toHaveProperty('Message');
+			expect(result[0].json.result).toHaveProperty('Receipt');
+		});
+	});
+
+	describe('getReceipt', () => {
+		it('should get receipt successfully', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getReceipt')
+				.mockReturnValueOnce('bafy2bzaced123')
+				.mockReturnValueOnce(null);
+			
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+				jsonrpc: '2.0',
+				result: { ExitCode: 0, Return: '', GasUsed: 500000 },
+				id: 123,
+			});
+
+			const result = await executeMessageOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result[0].json.result.ExitCode).toBe(0);
+		});
+	});
 });
 
 describe('Wallet Resource', () => {
@@ -235,346 +501,148 @@ describe('Wallet Resource', () => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
       getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.node.glif.io/rpc/v0',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.node.glif.io/rpc/v1'
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
       helpers: {
         httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
+        requestWithAuthentication: jest.fn()
       },
     };
   });
 
-  describe('walletNew operation', () => {
-    it('should create a new wallet address successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'walletNew';
-        if (param === 'keyType') return 'secp256k1';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-        jsonrpc: '2.0',
-        result: 'f1test123address',
-        id: 123,
-      });
-
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        address: 'f1test123address',
-      });
-    });
-
-    it('should handle API errors', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'walletNew';
-        if (param === 'keyType') return 'secp256k1';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-        jsonrpc: '2.0',
-        error: { code: -1, message: 'Invalid key type' },
-        id: 123,
-      });
-
-      await expect(
-        executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow();
-    });
-  });
-
-  describe('walletList operation', () => {
-    it('should list wallet addresses successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'walletList';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-        jsonrpc: '2.0',
-        result: ['f1test123address', 'f2test456address'],
-        id: 123,
-      });
-
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        addresses: ['f1test123address', 'f2test456address'],
-      });
-    });
-  });
-
-  describe('walletBalance operation', () => {
+  describe('getBalance operation', () => {
     it('should get wallet balance successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'walletBalance';
-        if (param === 'address') return 'f1test123address';
-        return undefined;
-      });
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getBalance')
+        .mockReturnValueOnce('f1test123');
 
       mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-        jsonrpc: '2.0',
-        result: '1000000000000000000',
-        id: 123,
+        result: '1000000000000000000'
       });
 
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      const result = await executeWalletOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
 
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        address: 'f1test123address',
-        balance: '1000000000000000000',
-        balanceAttoFIL: '1000000000000000000',
+      expect(result[0].json).toBe('1000000000000000000');
+      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+        method: 'POST',
+        url: 'https://api.node.glif.io/rpc/v1',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-key'
+        },
+        json: true,
+        body: {
+          jsonrpc: '2.0',
+          method: 'Filecoin.WalletBalance',
+          params: ['f1test123'],
+          id: 1
+        }
       });
     });
 
-    it('should validate address format', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'walletBalance';
-        if (param === 'address') return 'invalid-address';
-        return undefined;
-      });
+    it('should handle getBalance error', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getBalance')
+        .mockReturnValueOnce('f1test123');
 
-      await expect(
-        executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Invalid Filecoin address format');
+      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+      const result = await executeWalletOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
+
+      expect(result[0].json.error).toBe('API Error');
     });
   });
 
-  describe('walletSign operation', () => {
-    it('should sign data successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'walletSign';
-        if (param === 'address') return 'f1test123address';
-        if (param === 'data') return 'dGVzdCBkYXRh';
-        return undefined;
-      });
+  describe('createAddress operation', () => {
+    it('should create new wallet address successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('createAddress')
+        .mockReturnValueOnce('secp256k1');
 
       mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-        jsonrpc: '2.0',
+        result: 'f1newaddress123'
+      });
+
+      const result = await executeWalletOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
+
+      expect(result[0].json).toBe('f1newaddress123');
+    });
+  });
+
+  describe('listAddresses operation', () => {
+    it('should list wallet addresses successfully', async () => {
+      mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('listAddresses');
+
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+        result: ['f1addr1', 'f1addr2']
+      });
+
+      const result = await executeWalletOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
+
+      expect(result[0].json).toEqual(['f1addr1', 'f1addr2']);
+    });
+  });
+
+  describe('checkAddress operation', () => {
+    it('should check if wallet has address successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('checkAddress')
+        .mockReturnValueOnce('f1test123');
+
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+        result: true
+      });
+
+      const result = await executeWalletOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
+
+      expect(result[0].json).toBe(true);
+    });
+  });
+
+  describe('signMessage operation', () => {
+    it('should sign message successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('signMessage')
+        .mockReturnValueOnce('f1test123')
+        .mockReturnValueOnce('Hello World');
+
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
         result: {
           Type: 1,
-          Data: 'signature-data',
-        },
-        id: 123,
+          Data: 'signature_data'
+        }
       });
 
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      const result = await executeWalletOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
 
-      expect(result).toHaveLength(1);
       expect(result[0].json).toEqual({
-        address: 'f1test123address',
-        data: 'dGVzdCBkYXRh',
-        signature: {
-          Type: 1,
-          Data: 'signature-data',
-        },
+        Type: 1,
+        Data: 'signature_data'
       });
     });
-  });
-
-  describe('walletDelete operation', () => {
-    it('should delete wallet successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'walletDelete';
-        if (param === 'address') return 'f1test123address';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-        jsonrpc: '2.0',
-        result: null,
-        id: 123,
-      });
-
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        address: 'f1test123address',
-        deleted: true,
-        result: null,
-      });
-    });
-  });
-});
-
-describe('Message Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.node.glif.io/rpc/v0',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  test('should send message to mempool successfully', async () => {
-    const signedMessage = {
-      Message: {
-        To: 'f1test',
-        From: 'f1sender',
-        Value: '0',
-        Method: 0,
-        Params: '',
-        GasLimit: 1000000,
-        GasFeeCap: '1000000000',
-        GasPremium: '100000000',
-        Nonce: 0,
-      },
-      Signature: 'test-signature',
-    };
-
-    mockExecuteFunctions.getNodeParameter
-      .mockReturnValueOnce('mpoolPush')
-      .mockReturnValueOnce(signedMessage);
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-      jsonrpc: '2.0',
-      id: 1,
-      result: { '/': 'bafy2bzacedtest' },
-    });
-
-    const result = await executeMessageOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json.operation).toBe('mpoolPush');
-    expect(result[0].json.result).toEqual({ '/': 'bafy2bzacedtest' });
-  });
-
-  test('should get pending messages successfully', async () => {
-    mockExecuteFunctions.getNodeParameter
-      .mockReturnValueOnce('mpoolPending')
-      .mockReturnValueOnce([]);
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-      jsonrpc: '2.0',
-      id: 1,
-      result: [],
-    });
-
-    const result = await executeMessageOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json.operation).toBe('mpoolPending');
-    expect(result[0].json.result).toEqual([]);
-  });
-
-  test('should wait for message confirmation successfully', async () => {
-    const messageCid = 'bafy2bzacedtest';
-    const confidence = 5;
-
-    mockExecuteFunctions.getNodeParameter
-      .mockReturnValueOnce('stateWaitMsg')
-      .mockReturnValueOnce(messageCid)
-      .mockReturnValueOnce(confidence);
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-      jsonrpc: '2.0',
-      id: 1,
-      result: {
-        Message: { '/': messageCid },
-        Receipt: { ExitCode: 0, Return: null, GasUsed: 500000 },
-        TipSet: { Height: 100000 },
-      },
-    });
-
-    const result = await executeMessageOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json.operation).toBe('stateWaitMsg');
-    expect(result[0].json.result.Receipt.ExitCode).toBe(0);
-  });
-
-  test('should estimate gas limit successfully', async () => {
-    const message = {
-      To: 'f1test',
-      From: 'f1sender',
-      Value: '0',
-      Method: 0,
-      Params: '',
-    };
-
-    mockExecuteFunctions.getNodeParameter
-      .mockReturnValueOnce('gasEstimateGasLimit')
-      .mockReturnValueOnce(message)
-      .mockReturnValueOnce(null);
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-      jsonrpc: '2.0',
-      id: 1,
-      result: 1000000,
-    });
-
-    const result = await executeMessageOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json.operation).toBe('gasEstimateGasLimit');
-    expect(result[0].json.result).toBe(1000000);
-  });
-
-  test('should search message by CID successfully', async () => {
-    const messageCid = 'bafy2bzacedtest';
-
-    mockExecuteFunctions.getNodeParameter
-      .mockReturnValueOnce('stateSearchMsg')
-      .mockReturnValueOnce(messageCid);
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-      jsonrpc: '2.0',
-      id: 1,
-      result: {
-        Message: { '/': messageCid },
-        TipSet: { Height: 100000 },
-        Receipt: { ExitCode: 0 },
-      },
-    });
-
-    const result = await executeMessageOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json.operation).toBe('stateSearchMsg');
-    expect(result[0].json.result.Message['/']).toBe(messageCid);
-  });
-
-  test('should handle API errors gracefully', async () => {
-    mockExecuteFunctions.getNodeParameter
-      .mockReturnValueOnce('mpoolPush')
-      .mockReturnValueOnce({});
-
-    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-    mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-
-    const result = await executeMessageOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json.error).toBe('API Error');
-    expect(result[0].json.operation).toBe('mpoolPush');
-  });
-
-  test('should throw error for unknown operation', async () => {
-    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('unknownOperation');
-
-    await expect(
-      executeMessageOperations.call(mockExecuteFunctions, [{ json: {} }])
-    ).rejects.toThrow('Unknown operation: unknownOperation');
   });
 });
 
@@ -585,576 +653,318 @@ describe('Storage Resource', () => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
       getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.node.glif.io/rpc/v0',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.node.glif.io/rpc/v1'
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
       helpers: {
         httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
+        requestWithAuthentication: jest.fn()
+      }
     };
   });
 
-  it('should list storage deals successfully', async () => {
-    const mockResponse = {
-      jsonrpc: '2.0',
-      result: [
-        {
-          ProposalCid: { '/': 'bafk2bzacectest' },
-          State: 1,
-          Message: '',
-          Provider: 'f01234',
-        },
-      ],
-      id: 1,
-    };
+  test('getStorageDeals should get all storage deals', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getStorageDeals')
+      .mockReturnValueOnce('');
 
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'clientListDeals';
-      return null;
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      jsonrpc: '2.0',
+      result: { '1': { Proposal: { PieceSize: 1024 } } },
+      id: 1
     });
 
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const items = [{ json: {} }];
-    const result = await executeStorageOperations.call(mockExecuteFunctions, items);
+    const result = await executeStorageOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
 
     expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'POST',
-      url: 'https://api.node.glif.io/rpc/v0',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer test-api-key',
-      },
-      json: true,
-      body: {
-        jsonrpc: '2.0',
-        method: 'Filecoin.ClientListDeals',
-        params: [],
-        id: 1,
-      },
-    });
-  });
-
-  it('should start storage deal successfully', async () => {
-    const mockDealParams = {
-      Data: { Root: { '/': 'bafk2bzacectest' } },
-      Wallet: 'f1abc123',
-      Miner: 'f01234',
-      EpochPrice: '1000',
-      MinBlocksDuration: 518400,
-    };
-
-    const mockResponse = {
-      jsonrpc: '2.0',
-      result: { '/': 'bafk2bzacectest123' },
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'clientStartDeal';
-      if (param === 'dealParams') return JSON.stringify(mockDealParams);
-      return null;
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const items = [{ json: {} }];
-    const result = await executeStorageOperations.call(mockExecuteFunctions, items);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
-  });
-
-  it('should get deal information successfully', async () => {
-    const mockDealCid = 'bafk2bzacectest';
-    const mockResponse = {
-      jsonrpc: '2.0',
-      result: {
-        ProposalCid: { '/': mockDealCid },
-        State: 1,
-        Message: '',
-        Provider: 'f01234',
-      },
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'clientGetDealInfo';
-      if (param === 'dealCid') return mockDealCid;
-      return null;
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const items = [{ json: {} }];
-    const result = await executeStorageOperations.call(mockExecuteFunctions, items);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
-  });
-
-  it('should get miner information successfully', async () => {
-    const mockMinerAddress = 'f01234';
-    const mockResponse = {
-      jsonrpc: '2.0',
-      result: {
-        Owner: 'f1abc123',
-        Worker: 'f1def456',
-        PeerId: '12D3KooW...',
-        SectorSize: 34359738368,
-      },
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'stateMinerInfo';
-      if (param === 'minerAddress') return mockMinerAddress;
-      if (param === 'tipsetKey') return 'null';
-      return null;
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const items = [{ json: {} }];
-    const result = await executeStorageOperations.call(mockExecuteFunctions, items);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
-  });
-
-  it('should list all miners successfully', async () => {
-    const mockResponse = {
-      jsonrpc: '2.0',
-      result: ['f01234', 'f05678', 'f09012'],
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'stateListMiners';
-      if (param === 'tipsetKey') return 'null';
-      return null;
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const items = [{ json: {} }];
-    const result = await executeStorageOperations.call(mockExecuteFunctions, items);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
-  });
-
-  it('should handle API errors correctly', async () => {
-    const mockError = {
-      jsonrpc: '2.0',
-      error: {
-        code: -32602,
-        message: 'Invalid params',
-      },
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'clientListDeals';
-      return null;
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockError);
-
-    const items = [{ json: {} }];
-
-    await expect(
-      executeStorageOperations.call(mockExecuteFunctions, items)
-    ).rejects.toThrow('Filecoin API Error: Invalid params');
-  });
-
-  it('should handle invalid JSON parameters', async () => {
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'clientStartDeal';
-      if (param === 'dealParams') return 'invalid json';
-      return null;
-    });
-
-    const items = [{ json: {} }];
-
-    await expect(
-      executeStorageOperations.call(mockExecuteFunctions, items)
-    ).rejects.toThrow('Invalid deal parameters JSON');
-  });
-});
-
-describe('SmartContract Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.node.glif.io/rpc/v0',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('ethCall operation', () => {
-    it('should call smart contract method successfully', async () => {
-      const mockResponse = {
-        jsonrpc: '2.0',
-        id: 1,
-        result: '0x0000000000000000000000000000000000000000000000000000000000000020',
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'ethCall';
-        if (paramName === 'transaction') return { to: '0x123', data: '0x456' };
-        if (paramName === 'blockNumber') return 'latest';
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeSmartContractOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toBe(mockResponse.result);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+    expect(result[0].json.result).toBeDefined();
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
         method: 'POST',
-        url: 'https://api.node.glif.io/rpc/v0',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer test-api-key',
-        },
-        body: {
-          jsonrpc: '2.0',
-          method: 'eth_call',
-          params: [{ to: '0x123', data: '0x456' }, 'latest'],
-          id: 1,
-        },
-        json: true,
-      });
-    });
-
-    it('should handle JSON-RPC error response', async () => {
-      const mockErrorResponse = {
-        jsonrpc: '2.0',
-        id: 1,
-        error: {
-          code: -32000,
-          message: 'execution reverted',
-        },
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'ethCall';
-        if (paramName === 'transaction') return { to: '0x123', data: '0x456' };
-        if (paramName === 'blockNumber') return 'latest';
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockErrorResponse);
-
-      const items = [{ json: {} }];
-
-      await expect(
-        executeSmartContractOperations.call(mockExecuteFunctions, items)
-      ).rejects.toThrow();
-    });
+        url: 'https://api.node.glif.io/rpc/v1'
+      })
+    );
   });
 
-  describe('ethSendRawTransaction operation', () => {
-    it('should send raw transaction successfully', async () => {
-      const mockResponse = {
-        jsonrpc: '2.0',
-        id: 1,
-        result: '0x1234567890abcdef',
-      };
+  test('getMarketBalance should get market balance for address', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getMarketBalance')
+      .mockReturnValueOnce('f01234')
+      .mockReturnValueOnce('');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'ethSendRawTransaction';
-        if (paramName === 'signedTransaction') return '0xf86c808504a817c800825208943535353535353535353535353535353535353535880de0b6b3a76400008025a0';
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeSmartContractOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toBe(mockResponse.result);
-    });
-  });
-
-  describe('ethGetTransactionReceipt operation', () => {
-    it('should get transaction receipt successfully', async () => {
-      const mockResponse = {
-        jsonrpc: '2.0',
-        id: 1,
-        result: {
-          transactionHash: '0x123',
-          status: '0x1',
-          gasUsed: '0x5208',
-        },
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'ethGetTransactionReceipt';
-        if (paramName === 'transactionHash') return '0x123';
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeSmartContractOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse.result);
-    });
-  });
-
-  describe('ethEstimateGas operation', () => {
-    it('should estimate gas successfully', async () => {
-      const mockResponse = {
-        jsonrpc: '2.0',
-        id: 1,
-        result: '0x5208',
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'ethEstimateGas';
-        if (paramName === 'transaction') return { to: '0x123', data: '0x456' };
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeSmartContractOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toBe(mockResponse.result);
-    });
-  });
-
-  describe('ethGetCode operation', () => {
-    it('should get contract code successfully', async () => {
-      const mockResponse = {
-        jsonrpc: '2.0',
-        id: 1,
-        result: '0x608060405234801561001057600080fd5b50',
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'ethGetCode';
-        if (paramName === 'address') return '0x123';
-        if (paramName === 'blockNumber') return 'latest';
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeSmartContractOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toBe(mockResponse.result);
-    });
-  });
-
-  describe('error handling', () => {
-    it('should continue on fail when configured', async () => {
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'ethCall';
-        return '';
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Network error'));
-
-      const items = [{ json: {} }];
-      const result = await executeSmartContractOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.error).toBe('Network error');
-    });
-  });
-});
-
-describe('IPFS Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.node.glif.io/rpc/v0',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  test('clientImport should import data successfully', async () => {
-    const mockResponse = {
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
       jsonrpc: '2.0',
-      result: {
-        Key: 'bafkreih...',
-        Root: 'bafkreih...',
-        ImportID: 1,
-      },
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((name: string) => {
-      if (name === 'operation') return 'clientImport';
-      if (name === 'importParams') return '{"Path": "/test/file", "IsCAR": false}';
-      return undefined;
+      result: { Escrow: '1000000', Locked: '500000' },
+      id: 1
     });
 
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeIPFSOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    const result = await executeStorageOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
 
     expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'POST',
-      url: 'https://api.node.glif.io/rpc/v0',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer test-api-key',
-      },
-      body: {
-        jsonrpc: '2.0',
-        method: 'Filecoin.ClientImport',
-        params: [{ Path: '/test/file', IsCAR: false }],
-        id: 1,
-      },
-      json: true,
-    });
+    expect(result[0].json.result).toBeDefined();
   });
 
-  test('clientRetrieve should retrieve data successfully', async () => {
-    const mockResponse = {
+  test('getMinerInfo should get miner information', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getMinerInfo')
+      .mockReturnValueOnce('f01000')
+      .mockReturnValueOnce('');
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
       jsonrpc: '2.0',
-      result: {
-        DealID: 12345,
-        Status: 'Retrieved',
-      },
-      id: 1,
-    };
-
-    const retrieveOrder = {
-      Root: 'bafkreih123',
-      Piece: null,
-      Size: 1024,
-      Total: '1000000',
-      Client: 'f3abc123',
-      Provider: 'f01000',
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((name: string) => {
-      if (name === 'operation') return 'clientRetrieve';
-      if (name === 'retrieveOrder') return JSON.stringify(retrieveOrder);
-      return undefined;
+      result: { Owner: 'f01234', Worker: 'f05678', SectorSize: 34359738368 },
+      id: 1
     });
 
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeIPFSOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    const result = await executeStorageOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
 
     expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
+    expect(result[0].json.result.SectorSize).toBe(34359738368);
   });
 
-  test('clientQueryAsk should query ask price successfully', async () => {
-    const mockResponse = {
-      jsonrpc: '2.0',
-      result: {
-        Ask: {
-          Price: '1000000',
-          VerifiedPrice: '500000',
-          MinPieceSize: 256,
-          MaxPieceSize: 34359738368,
-          Miner: 'f01000',
-          Timestamp: 1640995200,
-          Expiry: 1641081600,
-        },
-      },
-      id: 1,
-    };
+  test('getMinerPower should get miner power', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getMinerPower')
+      .mockReturnValueOnce('f01000')
+      .mockReturnValueOnce('');
 
-    mockExecuteFunctions.getNodeParameter.mockImplementation((name: string) => {
-      if (name === 'operation') return 'clientQueryAsk';
-      if (name === 'peerId') return '12D3KooWTest';
-      if (name === 'minerAddress') return 'f01000';
-      return undefined;
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      jsonrpc: '2.0',
+      result: { MinerPower: { RawBytePower: '1073741824' }, TotalPower: { RawBytePower: '1099511627776' } },
+      id: 1
     });
 
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeIPFSOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    const result = await executeStorageOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
 
     expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse.result);
+    expect(result[0].json.result.MinerPower).toBeDefined();
   });
 
-  test('should handle API errors correctly', async () => {
-    const mockErrorResponse = {
+  test('getMinerDeadlines should get miner deadlines', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getMinerDeadlines')
+      .mockReturnValueOnce('f01000')
+      .mockReturnValueOnce('');
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
       jsonrpc: '2.0',
-      error: {
-        code: -32602,
-        message: 'Invalid params',
-      },
-      id: 1,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((name: string) => {
-      if (name === 'operation') return 'clientImport';
-      if (name === 'importParams') return '{"Path": ""}';
-      return undefined;
+      result: [{ PostSubmissions: [], DisputableProofCount: 0 }],
+      id: 1
     });
 
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockErrorResponse);
+    const result = await executeStorageOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
 
-    await expect(
-      executeIPFSOperations.call(mockExecuteFunctions, [{ json: {} }])
-    ).rejects.toThrow('Filecoin API error: Invalid params');
+    expect(result).toHaveLength(1);
+    expect(Array.isArray(result[0].json.result)).toBe(true);
   });
 
-  test('should handle network errors with continueOnFail', async () => {
-    mockExecuteFunctions.getNodeParameter.mockImplementation((name: string) => {
-      if (name === 'operation') return 'clientListImports';
-      return undefined;
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Network error'));
+  test('should handle API errors gracefully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getStorageDeals');
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
     mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-    const result = await executeIPFSOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    const result = await executeStorageOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
 
     expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual({ error: 'Network error' });
+    expect(result[0].json.error).toBe('API Error');
   });
+
+  test('should throw error for unknown operation', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('unknownOperation');
+
+    await expect(
+      executeStorageOperations.call(mockExecuteFunctions, [{ json: {} }])
+    ).rejects.toThrow('Unknown operation: unknownOperation');
+  });
+});
+
+describe('Network Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-key',
+				baseUrl: 'https://api.node.glif.io/rpc/v1',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+			},
+		};
+	});
+
+	describe('getPeers operation', () => {
+		it('should get connected peers successfully', async () => {
+			const mockResponse = {
+				jsonrpc: '2.0',
+				result: [
+					{
+						Addr: '/ip4/192.168.1.1/tcp/1234',
+						Peer: '12D3KooWExample',
+						Latency: '10ms'
+					}
+				],
+				id: 1
+			};
+
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getPeers');
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeNetworkOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }]
+			);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json).toEqual(mockResponse.result);
+		});
+
+		it('should handle API errors', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getPeers');
+
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(
+				new Error('Network error')
+			);
+
+			await expect(
+				executeNetworkOperations.call(mockExecuteFunctions, [{ json: {} }])
+			).rejects.toThrow('Network error');
+		});
+	});
+
+	describe('connectPeer operation', () => {
+		it('should connect to peer successfully', async () => {
+			const mockResponse = {
+				jsonrpc: '2.0',
+				result: null,
+				id: 1
+			};
+
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('connectPeer')
+				.mockReturnValueOnce('/ip4/192.168.1.1/tcp/1234/p2p/12D3KooWExample');
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeNetworkOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }]
+			);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json).toEqual(mockResponse.result);
+		});
+	});
+
+	describe('getListeningAddresses operation', () => {
+		it('should get listening addresses successfully', async () => {
+			const mockResponse = {
+				jsonrpc: '2.0',
+				result: {
+					Addrs: ['/ip4/0.0.0.0/tcp/1234', '/ip6/::/tcp/1234'],
+					ID: '12D3KooWExample'
+				},
+				id: 1
+			};
+
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getListeningAddresses');
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeNetworkOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }]
+			);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json).toEqual(mockResponse.result);
+		});
+	});
+
+	describe('getSyncStatus operation', () => {
+		it('should get sync status successfully', async () => {
+			const mockResponse = {
+				jsonrpc: '2.0',
+				result: [
+					{
+						Base: [{ '/': 'bafy2bzaced...' }],
+						Target: [{ '/': 'bafy2bzaced...' }],
+						Height: 2845123,
+						Stage: 4
+					}
+				],
+				id: 1
+			};
+
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getSyncStatus');
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeNetworkOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }]
+			);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json).toEqual(mockResponse.result);
+		});
+	});
+
+	describe('getVersion operation', () => {
+		it('should get node version successfully', async () => {
+			const mockResponse = {
+				jsonrpc: '2.0',
+				result: {
+					Version: '1.20.4',
+					APIVersion: 0x011004,
+					BlockDelay: 30
+				},
+				id: 1
+			};
+
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getVersion');
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeNetworkOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }]
+			);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json).toEqual(mockResponse.result);
+		});
+	});
 });
 });
