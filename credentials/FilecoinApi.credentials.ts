@@ -1,4 +1,7 @@
-import { ICredentialType, INodeProperties } from 'n8n-workflow';
+import {
+	ICredentialType,
+	INodeProperties,
+} from 'n8n-workflow';
 
 export class FilecoinApi implements ICredentialType {
 	name = 'filecoinApi';
@@ -6,57 +9,50 @@ export class FilecoinApi implements ICredentialType {
 	documentationUrl = 'https://docs.filecoin.io/developers/reference/json-rpc/';
 	properties: INodeProperties[] = [
 		{
-			displayName: 'API Base URL',
-			name: 'baseUrl',
-			type: 'string',
-			default: 'https://api.node.glif.io/rpc/v0',
-			required: true,
-			placeholder: 'https://api.node.glif.io/rpc/v0',
-			description: 'The base URL for the Filecoin RPC endpoint',
-		},
-		{
 			displayName: 'API Key',
 			name: 'apiKey',
 			type: 'string',
-			typeOptions: {
-				password: true,
-			},
+			typeOptions: { password: true },
 			default: '',
-			required: false,
-			description: 'API key for authentication (if required by your RPC provider)',
+			description: 'API key for authenticating with the Filecoin RPC provider',
 		},
 		{
-			displayName: 'Authentication Method',
-			name: 'authMethod',
+			displayName: 'RPC Provider URL',
+			name: 'baseUrl',
 			type: 'options',
 			options: [
 				{
-					name: 'None (Public Endpoint)',
-					value: 'none',
+					name: 'Glif RPC',
+					value: 'https://api.node.glif.io/rpc/v1',
 				},
 				{
-					name: 'Bearer Token',
-					value: 'bearer',
+					name: 'Ankr RPC',
+					value: 'https://rpc.ankr.com/filecoin',
 				},
 				{
-					name: 'Custom Header',
-					value: 'header',
+					name: 'ChainNodes RPC',
+					value: 'https://filecoin-mainnet.chainnodes.org/v1',
+				},
+				{
+					name: 'Custom',
+					value: 'custom',
 				},
 			],
-			default: 'none',
-			description: 'Method to authenticate with the Filecoin RPC endpoint',
+			default: 'https://api.node.glif.io/rpc/v1',
+			description: 'The RPC provider endpoint to use',
 		},
 		{
-			displayName: 'Custom Header Name',
-			name: 'headerName',
+			displayName: 'Custom URL',
+			name: 'customUrl',
 			type: 'string',
-			default: 'X-API-Key',
 			displayOptions: {
 				show: {
-					authMethod: ['header'],
+					baseUrl: ['custom'],
 				},
 			},
-			description: 'Name of the custom header for API key authentication',
+			default: '',
+			placeholder: 'https://your-custom-rpc-endpoint.com',
+			description: 'Custom RPC endpoint URL',
 		},
 	];
 }
